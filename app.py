@@ -1,88 +1,82 @@
 import streamlit as st
 import pandas as pd
 
-# Load the data for reference values
+# Load the data
 df = pd.read_excel("Corrected_HeartRisk_Data.xlsx")
 
-# --- CUSTOM CSS FOR THE SKETCH LOOK ---
+# Styling
 st.markdown("""
     <style>
-    .stApp { background-color: #f8faff; }
-    .main-card { background-color: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    .stButton>button { width: 100%; border-radius: 10px; height: 3.5em; background-color: #c62828; color: white; font-weight: bold; }
-    .metric-card { background: white; padding: 15px; border-radius: 10px; border: 1px solid #eee; text-align: center; }
+    .stApp { background-color: #f0f2f6; }
+    .stButton>button { width: 100%; border-radius: 25px; height: 3em; background-color: #d32f2f; color: white; }
     </style>
     """, unsafe_allow_html=True)
 
 if 'screen' not in st.session_state:
     st.session_state.screen = 'welcome'
-if 'user_data' not in st.session_state:
-    st.session_state.user_data = {}
+if 'data' not in st.session_state:
+    st.session_state.data = {}
 
 # --- SCREEN 1: WELCOME ---
 if st.session_state.screen == 'welcome':
     st.image("https://cdn-icons-png.flaticon.com/512/833/833472.png", width=100)
     st.title("Heart Risk Predictor")
     st.write("### MI vs Angina Comparative Analysis")
-    st.write("Assess your risk of Myocardial Infarction (MI) and Angina based on your health profile.")
     if st.button("Start Risk Assessment →"):
         st.session_state.screen = 'input_1'
 
-# --- SCREEN 2: PERSONAL & LIFESTYLE ---
+# --- SCREEN 2: LIFESTYLE & HISTORY ---
 elif st.session_state.screen == 'input_1':
-    st.header("1. Personal & Lifestyle")
-    with st.container():
-        st.session_state.user_data['age'] = st.selectbox("Age Group", df['Age Group'].unique())
-        st.session_state.user_data['gender'] = st.radio("Biological Gender", ["Male", "Female"])
-        st.session_state.user_data['smoking'] = st.selectbox("Smoking Status", df['Smoking Status'].unique())
-        st.session_state.user_data['activity'] = st.selectbox("Physical Activity Level", df['Physical Activity Level'].unique())
-        
-        if st.button("Next Step →"):
-            st.session_state.screen = 'input_2'
+    st.header("Step 1: Personal & History")
+    st.session_state.data['age'] = st.selectbox("Age Group", df['Age Group'].dropna().unique())
+    st.session_state.data['smoke'] = st.selectbox("Smoking Status", df['Smoking Status'].dropna().unique())
+    st.session_state.data['hba1c'] = st.selectbox("Fasting Sugar / HbA1c", ["Normal", "Pre-Diabetic", "Diabetic"])
+    st.session_state.data['ldl'] = st.selectbox("LDL Cholesterol Level", ["Normal", "Borderline High", "High"])
+    
+    if st.button("Next Step →"):
+        st.session_state.screen = 'input_2'
 
-# --- SCREEN 3: MEDICAL & SYMPTOMS ---
+# --- SCREEN 3: CLINICAL SYMPTOMS & BIOMARKERS ---
 elif st.session_state.screen == 'input_2':
-    st.header("2. Medical & Symptoms")
-    st.session_state.user_data['hyper'] = st.toggle("History of Hypertension")
-    st.session_state.user_data['diab'] = st.toggle("Diabetes Mellitus")
-    st.session_state.user_data['fam'] = st.toggle("Family History of Heart Disease")
+    st.header("Step 2: Clinical Details")
     
-    st.divider()
-    st.session_state.user_data['pain'] = st.selectbox("Character of Chest Pain", df['Character of Chest Pain'].unique())
-    st.session_state.user_data['symptoms'] = st.multiselect("Associated Symptoms", df['Associated Symptoms'].unique())
-    
-    if st.button("Calculate Risk →"):
-        # SIMPLE SCORING LOGIC
-        mi_score = 10 # Base score
-        angina_score = 15 # Base score
+    col1, col2 = st.columns(2)
+    with col1:
+        st.session_state.data['radiation'] = st.selectbox("Pain Radiation", ["None", "Left Arm", "Jaw", "Back"])
+        st.session_state.data['relief'] = st.selectbox("Pain Relief", ["Relieved by rest", "Not relieved by rest"])
+    with col2:
+        st.session_state.data['nitro'] = st.radio("Relieved by Nitroglycerin?", ["Yes", "No"])
+        st.session_state.data['troponin'] = st.selectbox("Troponin Level", df['Cardiac Troponin Level'].dropna().unique())
+
+    if st.button("Calculate Final Analysis →"):
+        # CALCULATE SCORES
+        mi = 10
+        angina = 15
         
-        # Add points based on inputs (Matching your project logic)
-        if st.session_state.user_data['hyper']: mi_score += 20; angina_score += 10
-        if st.session_state.user_data['diab']: mi_score += 20; angina_score += 5
-        if "Crushing" in st.session_state.user_data['pain']: mi_score += 30
-        if "Pressure" in st.session_state.user_data['pain']: angina_score += 25
+        # Logic for MI
+        if "Positive" in st.session_state.data['troponin']: mi += 40
+        if st.session_state.data['radiation'] == "Left Arm": mi += 20
+        if st.session_state.data['relief'] == "Not relieved by rest": mi += 15
         
-        st.session_state.mi_final = min(mi_score, 99)
-        st.session_state.angina_final = min(angina_score, 99)
+        # Logic for Angina
+        if st.session_state.data['nitro'] == "Yes": angina += 30
+        if st.session_state.data['relief'] == "Relieved by rest": angina += 20
+        if "Borderline" in st.session_state.data['ldl']: angina += 10
+
+        st.session_state.mi_res = min(mi, 95)
+        st.session_state.angina_res = min(angina, 95)
         st.session_state.screen = 'results'
 
 # --- SCREEN 4: RESULTS ---
 elif st.session_state.screen == 'results':
-    st.header("Your Results")
+    st.header("Comparative Risk Analysis")
+    st.metric("MI (Heart Attack) Risk", f"{st.session_state.mi_res}%")
+    st.metric("Angina Risk", f"{st.session_state.angina_res}%")
     
-    col1, col2 = st.columns(2)
-    with col1:
-        color = "red" if st.session_state.mi_final > 50 else "orange"
-        st.markdown(f"<div class='metric-card'><h4>MI Risk</h4><h2 style='color:{color}'>{st.session_state.mi_final}%</h2></div>", unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown(f"<div class='metric-card'><h4>Angina Risk</h4><h2 style='color:blue'>{st.session_state.angina_final}%</h2></div>", unsafe_allow_html=True)
-
-    st.write("### Interpretation")
-    if st.session_state.mi_final > st.session_state.angina_final:
-        st.error("Your profile indicates a higher correlation with Myocardial Infarction (MI). Seek medical advice.")
+    if st.session_state.mi_res > st.session_state.angina_res:
+        st.error("Higher correlation with Acute Myocardial Infarction.")
     else:
-        st.warning("Your profile indicates a higher correlation with Stable/Unstable Angina symptoms.")
-    
-    if st.button("Restart"):
+        st.warning("Higher correlation with Angina Pectoris.")
+        
+    if st.button("New Assessment"):
         st.session_state.screen = 'welcome'
