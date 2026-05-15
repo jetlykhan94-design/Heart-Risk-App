@@ -1,24 +1,25 @@
 import streamlit as st
 import pandas as pd
 
-# 1. UI CONFIG & THEME (Auto-adjusts to Light/Dark mode)
-st.set_page_config(page_title="Heart Risk Analyzer", page_icon="❤️", layout="centered")
+# 1. PAGE SETUP
+st.set_page_config(page_title="Heart Risk Pro", page_icon="❤️", layout="centered")
 
+# 2. ADVANCED UI CUSTOMIZATION
 st.markdown("""
     <style>
-    /* Professional styling that works in both themes */
-    .main { padding-top: 2rem; }
-    .stMetric { 
-        background-color: rgba(211, 47, 47, 0.05); 
-        padding: 20px; 
-        border-radius: 15px; 
-        border: 1px solid #d32f2f;
-    }
+    .main { background-color: transparent; }
+    /* Metric styling */
+    [data-testid="stMetricValue"] { font-size: 40px; color: #d32f2f; }
+    /* Button styling */
     .stButton>button {
-        width: 100%; border-radius: 25px; height: 3.5em;
+        width: 100%; border-radius: 15px; height: 3.5em;
         background-color: #d32f2f !important; color: white !important;
-        font-weight: bold; font-size: 18px; border: none;
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+        font-weight: bold; border: none; font-size: 16px;
+    }
+    /* Section dividers */
+    .section-head {
+        color: #d32f2f; font-size: 20px; font-weight: bold;
+        margin-top: 20px; border-bottom: 2px solid #d32f2f;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -26,98 +27,101 @@ st.markdown("""
 if 'screen' not in st.session_state:
     st.session_state.screen = 'welcome'
 
-# --- SCREEN 1: WELCOME (EYE-CATCHING) ---
+# --- SCREEN 1: WELCOME ---
 if st.session_state.screen == 'welcome':
-    st.image("https://cdn-icons-png.flaticon.com/512/833/833472.png", width=100)
+    st.image("https://cdn-icons-png.flaticon.com/512/833/833472.png", width=80)
     st.title("Heart Risk Predictor")
-    st.markdown("### **MI vs Angina Comparative Analysis**")
-    st.write("Enter clinical data to generate a dual-risk assessment report.")
-    
-    with st.container():
-        st.info("🎯 **Exhibition Mode Active**: This tool uses clinical markers to differentiate between Myocardial Infarction and Angina Pectoris.")
-        if st.button("Start New Assessment →"):
-            st.session_state.screen = 'assessment'
+    st.write("#### Pharmaceutical Research Exhibition Tool")
+    st.write("This app provides a comparative analysis between **Myocardial Infarction (MI)** and **Angina Pectoris** risk based on clinical markers.")
+    if st.button("Start New Clinical Assessment →"):
+        st.session_state.screen = 'assessment'
 
-# --- SCREEN 2: COMPREHENSIVE CLINICAL INPUTS ---
+# --- SCREEN 2: ALL QUESTIONS (PERSONAL + CLINICAL + LAB) ---
 elif st.session_state.screen == 'assessment':
-    st.header("📋 Clinical Assessment")
+    st.header("📋 Clinical Input Form")
     
-    with st.form("risk_form"):
-        # Section 1: Vitals & Lab Markers (The "More Questions" part)
-        st.subheader("🧪 Laboratory & Clinical Markers")
+    with st.form("full_assessment"):
+        # PERSONAL PROFILE
+        st.markdown('<p class="section-head">1. Personal & Lifestyle Profile</p>', unsafe_allow_html=True)
         c1, c2 = st.columns(2)
         with c1:
-            bp = st.selectbox("Blood Pressure (mmHg)", ["120/80 (Normal)", "140/90 (Stage 1)", "160/100 (Stage 2)", "Crisis (>180)"])
-            sugar = st.selectbox("Fasting Sugar / HbA1c", ["Normal (<100mg/dL)", "Pre-diabetic", "Diabetic (>126mg/dL)"])
+            age = st.selectbox("Age Group", ["Under 30", "30-39", "40-49", "50-59", "60+"])
+            gender = st.selectbox("Biological Gender", ["Male", "Female"])
+            weight_status = st.selectbox("BMI Category", ["Normal weight", "Overweight", "Obese"])
         with c2:
-            ldl = st.selectbox("LDL Cholesterol (mg/dL)", ["Desirable (<100)", "Borderline (130-159)", "High (>160)"])
-            troponin = st.selectbox("Cardiac Troponin Level", ["Negative / Normal", "Positive (Mildly Elevated)", "Positive (Significantly Elevated)"])
+            smoke = st.selectbox("Smoking Status", ["Never Smoked", "Current Smoker", "Passive Smoker"])
+            activity = st.selectbox("Activity Level", ["Sedentary", "Moderately Active", "Very Active"])
+            location = st.selectbox("Location", ["Urban", "Rural"])
 
-        # Section 2: Symptoms
-        st.subheader("⚡ Symptom Analysis")
-        pain_type = st.selectbox("Character of Chest Pain", ["None", "Sharp / Stabbing", "Pressure / Heaviness", "Crushing / Squeezing"])
-        radiation = st.multiselect("Pain Radiation", ["None", "Left Arm", "Jaw / Neck", "Back", "Right Arm"])
-        duration = st.selectbox("Pain Duration", ["< 5 mins", "5-20 mins", "20-30 mins", "> 30 mins"])
-        
-        # Section 3: History
-        st.subheader("🏥 Patient History")
-        colA, colB, colC = st.columns(3)
-        h_bp = colA.checkbox("Hypertension")
-        h_dm = colB.checkbox("Diabetes")
-        h_fh = colC.checkbox("Family History")
+        # CLINICAL HISTORY
+        st.markdown('<p class="section-head">2. Medical History & Vitals</p>', unsafe_allow_html=True)
+        c3, c4 = st.columns(2)
+        with c3:
+            h_bp = st.checkbox("History of Hypertension")
+            h_dm = st.checkbox("History of Diabetes Mellitus")
+            h_fh = st.checkbox("Family History of IHD")
+        with c4:
+            bp_val = st.selectbox("Current Blood Pressure", ["Normal", "Stage 1", "Stage 2", "Crisis"])
+            sugar_val = st.selectbox("Glucose / HbA1c", ["Normal", "Pre-Diabetic", "Diabetic"])
 
-        submit = st.form_submit_button("Generate Comparative Analysis")
+        # SYMPTOMS & LABS
+        st.markdown('<p class="section-head">3. Symptoms & Laboratory Markers</p>', unsafe_allow_html=True)
+        pain = st.selectbox("Character of Chest Pain", ["None", "Sharp / Stabbing", "Pressure / Heaviness", "Crushing / Squeezing"])
+        radiate = st.selectbox("Pain Radiation", ["None", "Left Arm", "Jaw / Neck", "Back"])
+        trop = st.selectbox("Cardiac Troponin Level", ["Not Performed", "Negative", "Positive (Elevated)"])
+        ldl = st.selectbox("LDL Cholesterol Level", ["Desirable", "Borderline", "High"])
+
+        submit = st.form_submit_button("Generate Report")
 
         if submit:
-            # DYNAMIC LOGIC CALCULATOR
-            mi = 10
-            angina = 15
+            # SAVE HISTORY TO SESSION
+            st.session_state.patient_data = {
+                "Age": age, "Gender": gender, "BMI": weight_status, 
+                "Smoking": smoke, "Hypertension": h_bp, "Diabetes": h_dm,
+                "Pain": pain, "Radiation": radiate, "Troponin": trop
+            }
             
-            # MI Points
-            if troponin == "Positive (Significantly Elevated)": mi += 60
-            if "Left Arm" in radiation: mi += 15
-            if duration == "> 30 mins": mi += 10
-            if bp == "Crisis (>180)": mi += 5
+            # CALCULATION LOGIC
+            mi, ang = 10, 15
+            if trop == "Positive (Elevated)": mi += 60
+            if radiate == "Left Arm": mi += 15
+            if h_bp or bp_val != "Normal": mi += 10; ang += 10
+            if pain == "Pressure / Heaviness": ang += 30
+            if pain == "Crushing / Squeezing": mi += 20
             
-            # Angina Points
-            if pain_type == "Pressure / Heaviness": angina += 30
-            if duration == "5-20 mins": angina += 20
-            if ldl == "High (>160)": angina += 10
-            
-            # Cap at 98%
             st.session_state.mi_res = min(mi, 98)
-            st.session_state.angina_res = min(angina, 95)
+            st.session_state.angina_res = min(ang, 95)
             st.session_state.screen = 'results'
             st.rerun()
 
-# --- SCREEN 3: RESULTS (EYE-CATCHING DASHBOARD) ---
+# --- SCREEN 3: RESULTS + HISTORY SAVED ---
 elif st.session_state.screen == 'results':
-    st.title("📊 Analysis Report")
-    st.write("---")
+    st.title("📊 Clinical Analysis Report")
     
-    # Dual Display (Fixes your 2nd problem)
-    col1, col2 = st.columns(2)
+    # TABS FOR CLEAN UI
+    tab1, tab2 = st.tabs(["🎯 Risk Analysis", "📝 Patient History"])
     
-    with col1:
-        st.markdown("### **MI Risk**")
-        st.metric(label="Myocardial Infarction", value=f"{st.session_state.mi_res}%")
-        st.progress(st.session_state.mi_res / 100)
+    with tab1:
+        st.write("### Comparative Scoring")
+        colA, colB = st.columns(2)
+        colA.metric("MI Risk Score", f"{st.session_state.mi_res}%")
+        colB.metric("Angina Risk Score", f"{st.session_state.angina_res}%")
         
-    with col2:
-        st.markdown("### **Angina Risk**")
-        st.metric(label="Angina Pectoris", value=f"{st.session_state.angina_res}%")
-        st.progress(st.session_state.angina_res / 100)
+        st.divider()
+        if st.session_state.mi_res > 50:
+            st.error("🚨 **High MI Risk:** Clinical markers suggest Myocardial Infarction.")
+        elif st.session_state.angina_res > 40:
+            st.warning("⚠️ **Angina Risk:** Symptoms consistent with Coronary Artery Disease.")
+        else:
+            st.success("✅ **Normal Profile:** No acute cardiac markers detected.")
 
-    st.write("---")
-    
-    # Interpretation
-    if st.session_state.mi_res > st.session_state.angina_res and st.session_state.mi_res > 50:
-        st.error("🚨 **CLINICAL ALERT**: High probability of Myocardial Infarction. Urgent ECG and cardiac consult recommended.")
-    elif st.session_state.angina_res > 40:
-        st.warning("⚠️ **ISCHEMIA DETECTED**: Risk profile is more consistent with Stable/Unstable Angina. Lipid management advised.")
-    else:
-        st.success("✅ **STABLE PROFILE**: Low risk detected for acute coronary events.")
+    with tab2:
+        st.write("### Recorded Clinical History")
+        # Display the saved history in a neat table
+        history_df = pd.DataFrame(st.session_state.patient_data.items(), columns=["Parameter", "Response"])
+        st.table(history_df)
 
-    if st.button("← Back to Home"):
+    st.divider()
+    if st.button("Restart for New Patient"):
         st.session_state.screen = 'welcome'
         st.rerun()
